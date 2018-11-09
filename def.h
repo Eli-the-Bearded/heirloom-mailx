@@ -518,14 +518,19 @@ enum ltoken {
 
 /*
  * Constants for conditional commands.  These describe whether
- * we should be executing stuff or not.
+ * we should be executing stuff or not. Arranged in if/else pairs
  */
 enum condition {
-	CANY	= 0,	/* Execute in send or receive mode */
-	CRCV	= 1,	/* Execute in receive mode only */
-	CSEND	= 2,	/* Execute in send mode only */
-	CTERM	= 3,	/* Execute only if stdin is a tty */
-	CNONTERM= 4	/* Execute only if stdin not tty */
+	CANY	  = 0,	/* Execute in send or receive mode */
+
+	CRCV	  = 1,	/* Execute in receive mode only */
+	CSEND	  = 2,	/* Execute in send mode only */
+
+	CTERM	  = 3,	/* Execute only if stdin is a tty */
+	CNONTERM  = 4,	/* Execute only if stdin not tty */
+
+	CHEIRLOOM = 5,	/* used by this program (but not etbmail) */
+	CETBMAIL  = 6,	/* used by etbmail (but not this program) */
 };
 
 /*

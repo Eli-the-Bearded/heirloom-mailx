@@ -134,6 +134,10 @@ vcopy(const char *str)
 /*
  * Get the value of a variable and return it.
  * Look in the environment if its not available locally.
+ *
+ * Variables are used extensively to alter behavior, and some
+ * variable names are composed dynamically, so in -dddd debug
+ * level, print all the names used.
  */
 
 char *
@@ -146,7 +150,13 @@ value(const char *name)
 	if ((vp = lookup(name)) == NULL) {
 		if ((vs = getenv(name)) != NULL && *vs)
 			vs = savestr(vs);
+		if(debug > 3) {
+			printf("Using var '%s' from environment\n", name);
+		}
 		return vs;
+	}
+	if(debug > 3) {
+		printf("Using var '%s' from internal settings\n", name);
 	}
 	return vp->v_value;
 }

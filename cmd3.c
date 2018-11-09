@@ -1017,6 +1017,18 @@ ifcmd(void *v)
 		cond = CTERM;
 		break;
 
+	case 'n': case 'N':
+		cond = CNONTERM;
+		break;
+
+	case 'h': case 'H':
+		cond = CHEIRLOOM;
+		break;
+
+	case 'e': case 'E':
+		cond = CETBMAIL;
+		break;
+
 	default:
 		printf(catgets(catd, CATSET, 43,
 				"Unrecognized if-keyword: \"%s\"\n"), cp);
@@ -1050,6 +1062,18 @@ elsecmd(void *v)
 
 	case CTERM:
 		cond = CNONTERM;
+		break;
+
+	case CNONTERM:
+		cond = CTERM;
+		break;
+
+	case CETBMAIL:
+		cond = CHEIRLOOM;
+		break;
+
+	case CHEIRLOOM:
+		cond = CETBMAIL;
 		break;
 
 	default:

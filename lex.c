@@ -452,8 +452,26 @@ execute(char *linebuf, int contxt, size_t linesize)
 	}
 	com = lex(word);
 	if (com == NULL) {
+		if(cond == CETBMAIL) {
+			/* Just ignore etbmail commands inside 'if etbmail'
+			 * conditionals.
+			 */
+			ac_free(word);
+			return(0);
+		}
 		printf(catgets(catd, CATSET, 91,
 				"Unknown command: \"%s\"\n"), word);
+
+		/* Since we are bailing out of the file, we'll never
+		 * see the endif. Without clearing cond you can get
+		 * into a state where input is ignored. Consider:
+		 *   if sending
+		 *     unknown_command
+		 *   endif
+		 * then in read mode, nothing works until the user
+		 * thinks to type "else" or "endif"...
+		 */
+		cond = CANY;
 		goto out;
 	}
 
@@ -466,7 +484,8 @@ execute(char *linebuf, int contxt, size_t linesize)
 		if ((cond == CRCV && !rcvmode) ||
 				(cond == CSEND && rcvmode) ||
 				(cond == CTERM && !is_a_tty[0]) ||
-				(cond == CNONTERM && is_a_tty[0])) {
+				(cond == CNONTERM && is_a_tty[0]) ||
+				(cond == CETBMAIL)) {
 			ac_free(word);
 			return(0);
 		}
