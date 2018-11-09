@@ -1,3 +1,71 @@
+Fri Nov 09 2018 eli-the-bearded
+
+All patches from Mageia's nail-12.4-14.mga6.src.rpm
+
+* Thu Mar 03 2016 daviddavid <daviddavid> 12.4-14.mga6
++ Revision: 984089
+- add patch10 to fix build with openssl with sslv2 disabled
+
+  + umeabot <umeabot>
+    - Rebuild for openssl
+
+* Tue Feb 09 2016 umeabot <umeabot> 12.4-13.mga6
++ Revision: 951333
+- Mageia 6 Mass Rebuild
+
+* Tue Dec 16 2014 luigiwalser <luigiwalser> 12.4-12.mga5
++ Revision: 803616
+- add security patches from Florian Weimer of redhat, including CVE-2004-2771
+
+* Wed Oct 15 2014 umeabot <umeabot> 12.4-11.mga5
++ Revision: 740596
+- Second Mageia 5 Mass Rebuild
+
+* Tue Sep 16 2014 umeabot <umeabot> 12.4-10.mga5
++ Revision: 682793
+- Mageia 5 Mass Rebuild
+
+* Fri Oct 18 2013 umeabot <umeabot> 12.4-9.mga4
++ Revision: 508133
+- Mageia 4 Mass Rebuild
+- Mass Rebuild - https://wiki.mageia.org/en/Feature:Mageia3MassRebuild
+
+* Wed Jan 26 2011 kharec <kharec> 12.4-7.mga1
++ Revision: 39888
+- imported package nail
+
+
+* Fri Dec 03 2010 Oden Eriksson <oeriksson@mandriva.com> 12.4-7mdv2011.0
++ Revision: 607030
+- try to fuix weid build error
+- rebuild
+
+* Thu Apr 08 2010 Ahmad Samir <ahmadsamir@mandriva.org> 12.4-6mdv2010.1
++ Revision: 532997
+- add patch from Fedora to make it build with openssl-1.0.0
+
+* Fri Feb 26 2010 Oden Eriksson <oeriksson@mandriva.com> 12.4-4mdv2010.1
++ Revision: 511594
+- rebuilt against openssl-0.9.8m
+
+* Sun Sep 27 2009 Olivier Blin <oblin@mandriva.com> 12.4-3mdv2010.0
++ Revision: 450161
+- fix build: nail is implementation its own getopt and use a global
+  optopt variable which conflicts with glibc optopt, using static
+  fixes that (from Arnaud Patard)
+
+* Thu Sep 03 2009 Christophe Fergeau <cfergeau@mandriva.com> 12.4-2mdv2010.0
++ Revision: 426202
+- rebuild
+
+* Sun Dec 21 2008 Oden Eriksson <oeriksson@mandriva.com> 12.4-1mdv2009.1
++ Revision: 317115
+- 12.4
+- fhs fixes
+- use %%optflags and %%ldflags
+- don't strip the binary at install
+
+
 [12.4] released 7/29/08
 * With the "-E" command line option or if the "skipemptybody" variable is
   set, outgoing messages that contain no text in their first or only part

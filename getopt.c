@@ -43,7 +43,7 @@ typedef	int	ssize_t;
 char	*optarg;
 int	optind = 1;
 int	opterr = 1;
-int	optopt;
+static int	optopt;
 
 static void
 error(const char *s, int c)

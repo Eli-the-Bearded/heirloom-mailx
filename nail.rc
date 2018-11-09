@@ -61,3 +61,7 @@ ignore mime-version content-transfer-encoding
 
 # Only include selected header fields when forwarding messages.
 fwdretain subject date from to
+
+# Set PAGER to less, Mandriva doesn't provide pg
+set PAGER=less
+

@@ -15,6 +15,10 @@ IMAP).
 
 In 2006 Gunnar Ritter adopted it into the "heirloom" project
 and changed the name back to `mailx`. The last update was
-apparently in 2008, this version 12.4. There are known security
-issues with this version.
+apparently in 2008, version 12.4. This version comes from
+[nail-12.4-14.mga6.src.rpm](http://distrib-coffee.ipsl.jussieu.fr/pub/linux/Mageia/distrib/6/SRPMS/core/release/nail-12.4-14.mga6.src.rpm)
+
+It has the ten patches from that RPM applied, and the ChangeLog
+has been updated with the changes listed in `nail.spec`. The
+patches include fixing CVE-2004-2771 and killing off SSLv2.
 
