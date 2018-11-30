@@ -261,6 +261,7 @@ int getopt(int argc, char *const argv[], const char *optstring);
 /* head.c */
 int is_head(char *linebuf, size_t linelen);
 void parse(char *line, size_t linelen, struct headline *hl, char *pbuf);
+void try_tweak(char *indate, char *tweakdate);
 void extract_header(FILE *fp, struct header *hp);
 #define	hfield(a, b)	hfield_mult(a, b, 1)
 char *hfield_mult(char *field, struct message *mp, int mult);

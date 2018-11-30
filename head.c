@@ -58,6 +58,8 @@ static int gethfield(FILE *f, char **linebuf, size_t *linesize, int rem,
 		char **colon);
 static int msgidnextc(const char **cp, int *status);
 static int charcount(char *str, int c);
+static int is_date_tweak(char*);
+static void tweak(char *);
 
 /*
  * See if the passed line buffer is a mail header.
@@ -94,6 +96,7 @@ parse(char *line, size_t linelen, struct headline *hl, char *pbuf)
 	hl->l_from = NULL;
 	hl->l_tty = NULL;
 	hl->l_date = NULL;
+	hl->l_tdate[0] = 0;
 	cp = line;
 	sp = pbuf;
 	word = ac_alloc(linelen + 1);
@@ -113,6 +116,8 @@ parse(char *line, size_t linelen, struct headline *hl, char *pbuf)
 	else
 		hl->l_date = catgets(catd, CATSET, 213, "<Unknown date>");
 	ac_free(word);
+	/* date is tweaked only if in specific format */
+	try_tweak(hl->l_date, hl->l_date);
 }
 
 /*
@@ -134,7 +139,7 @@ copyin(char *src, char **space)
 	return (top);
 }
 
-#ifdef	notdef
+
 static int	cmatch(char *, char *);
 /*
  * Test to see if the passed string is a ctime(3) generated
@@ -155,7 +160,13 @@ static int	cmatch(char *, char *);
  * 'N'	A new line
  */
 static char  *tmztype[] = {
+	/* This one needs to be first for is_date_tweak()
+	 * It's also the most common From header version (at
+	 * least in 2000 to 2018 era).
+	 * It's 24 + 1 for null long, COMMON_DATE_LEN in def.h
+	 */
 	"Aaa Aaa O0 00:00:00 0000",
+
 	"Aaa Aaa O0 00:00 0000",
 	"Aaa Aaa O0 00:00:00 AAA 0000",
 	"Aaa Aaa O0 00:00 AAA 0000",
@@ -193,6 +204,157 @@ is_date(char *date)
 	}
 
 	return ret;
+}
+
+/* check for tweak() compatible date format */
+static int
+is_date_tweak(date)
+        char date[];
+{
+        return cmatch(date, tmztype[0]);
+}
+
+/* Macros for tweak()ing */
+#define datesep		('/')
+#define ADD(a,b)	((a)*256+(b))
+#define cur		(date[src])
+#define cursp		(cur==' ')
+#define curnsp		(cur!=' ')
+#define next		(date[src+1])
+#define nnext		(date[src+2])
+#define setnext		(date[dest++])
+#define pad		(setnext=' ')
+#define skip		(src++)
+#define dcp		(setnext=date[skip])
+#define finish		if(src==dest) {return;} else {\
+			  while(cur){dcp;} \
+			  setnext='\0'; \
+			}
+
+/* Simple rewriting of the date from BEG's myfrm.c */
+static void
+tweak(char *date)
+{
+  int month,tp=0,src=0,dest=0;
+  char time[8];
+
+  if (cursp) {
+    if (cur==next) {
+      skip;
+    }
+    pad;
+    skip;
+  }
+  /* Day of week */
+  switch(ADD(cur,next)) {
+    case ADD('S','u'):
+    case ADD('M','o'):
+    case ADD('T','u'):
+    case ADD('W','e'):
+    case ADD('T','h'):
+    case ADD('F','r'):
+    case ADD('S','a'):
+      dcp; dcp;
+      if (curnsp) { skip; } else { finish; }
+      break;
+    default:
+      finish;
+  }
+  if (cursp) { dcp; } else { finish; }
+  /* Month of year */
+  switch(ADD(cur,next)) {
+    case ADD('J','a'):
+      month=1;
+      break;
+    case ADD('F','e'):
+      month=2;
+      break;
+    case ADD('M','a'): /* March or May */
+      if (nnext=='r') {
+	month=3;
+      } else
+      if (nnext=='y') {
+	month=5;
+      } else
+        finish;
+      break;
+    case ADD('A','p'):
+      month=4;
+      break;
+    case ADD('J','u'): /* June or July */
+      if (nnext=='n') {
+	month=6;
+      } else
+      if (nnext=='l') {
+	month=7;
+      } else
+        finish;
+      break;
+    case ADD('A','u'):
+      month=8;
+      break;
+    case ADD('S','e'):
+      month=9;
+      break;
+    case ADD('O','c'):
+      month=10;
+      break;
+    case ADD('N','o'):
+      month=11;
+      break;
+    case ADD('D','e'):
+      month=12;
+      break;
+    default:
+      finish;
+  }
+  if (month>9) {
+    setnext='1';
+    setnext=('0'+month-10);
+    skip; skip;
+  } else {
+    setnext='0';
+    setnext=('0'+month);
+    skip; skip;
+  }
+  /* Third day in month abbr. */
+  if (curnsp) { skip; } else { finish; }
+  /* Skip space in date, and set seperator. */
+  if (cursp) { setnext=datesep; skip; } else { finish; }
+  /* deal with space for first digit in date case */
+  if (cursp) { setnext='0'; skip; }
+  /* Day of month */
+  while(curnsp) {dcp;}
+  skip; /* space */
+  /* Time of day (yank) */
+  while((curnsp)&&(tp<8)) {time[tp++]=cur;skip;}
+  if (tp!=8) { finish; }
+  if (cursp) { setnext=datesep; skip; } else { finish; }
+  /* Build in some Y2K problems. Yay! */
+  skip; skip; /* century */
+  dcp; dcp;   /* year    */
+  /* Time of day (put) */
+  setnext=' ';
+  for(tp=0;tp<8;setnext=time[tp++]);
+  /* newline */
+  dcp;
+  /* null */
+  dcp;
+}
+
+/* Try to create a "tweaked" date, but if not suitable, just
+ * leave it set to the empty string.
+ * Suitable in: "Sun Aug 12 03:05:06 2018" (24 + 1 for nul long)
+ * Tweaked out: "Su 08/12/18 03:05"        (17 + 1 for nul long)
+ */
+void
+try_tweak(char *indate, char *tdate)
+{
+	tdate[0] = 0;
+	if(is_date_tweak(indate)) {
+		strncpy(tdate, indate, COMMON_DATE_LEN);
+		tweak(tdate);
+	}
 }
 
 /*
@@ -245,7 +407,7 @@ cmatch(char *cp, char *tp)
 		return 0;
 	return (1);
 }
-#endif	/* notdef */
+
 
 /*
  * Collect a liberal (space, tab delimited) word into the word buffer

@@ -369,15 +369,17 @@ hprf(const char *fmt, int mesg, FILE *f, int threaded, const char *attrlist)
 {
 	struct message	*mp = &message[mesg-1];
 	char	*headline = NULL, *subjline, *name, *cp, *pbuf = NULL;
+	char	wcount[LINESIZE];
 	struct headline	hl;
 	size_t	headsize = 0;
 	const char	*fp;
 	int	B, c, i, n, s;
-	int	headlen = 0;
+	int	headlen = 0, wcl = 0;
 	struct str	in, out;
 	int	subjlen = scrnwidth, fromlen, isto = 0, isaddr = 0;
 	FILE	*ibuf;
 
+	wcount[0] = 0;
 	if ((mp->m_flag & MNOFROM) == 0) {
 		if ((ibuf = setinput(&mb, mp, NEED_HEADER)) == NULL)
 			return;
@@ -402,6 +404,7 @@ hprf(const char *fmt, int mesg, FILE *f, int threaded, const char *attrlist)
 		hl.l_from = /*fakefrom(mp);*/NULL;
 		hl.l_tty = NULL;
 		hl.l_date = fakedate(mp->m_time);
+		try_tweak(hl.l_date, hl.l_tdate);
 	}
 	if (value("datefield") && (cp = hfield("date", mp)) != NULL)
 		hl.l_date = fakedate(rfctime(cp));
@@ -519,10 +522,31 @@ hprf(const char *fmt, int mesg, FILE *f, int threaded, const char *attrlist)
 				subjlen -= n;
 				break;
 			case 'd':
+date_fallback:
 				if (n <= 0)
 					n = 16;
 				subjlen -= fprintf(f, "%*.*s", n, n, hl.l_date);
 				break;
+
+/* %L etbmail line count   div / 100 + c if over certain amount */
+			case 'L':
+				if (n == 0)
+					n = 3;
+				/* xlines might not be set for remote mail */
+				if(!mp->m_xlines) {
+					subjlen -= n;
+					while (n--)
+						putc('-', f);
+					break;
+				}
+				if (mp->m_xlines > 9999) {
+					subjlen -= fprintf(f, "%*ld%c", n,
+							TO_CENT(mp->m_xlines),
+							SC_CLINES_CHAR);
+					break;
+				} 
+				/* else not above threshhold */
+				/*FALLTHRU*/
 			case 'l':
 				if (n == 0)
 					n = 4;
@@ -534,6 +558,36 @@ hprf(const char *fmt, int mesg, FILE *f, int threaded, const char *attrlist)
 					while (n--)
 						putc(' ', f);
 				}
+				break;
+/* %O etbmail octet count  human readible formatting */
+			case 'O':
+				if (n == 0)
+					n = -3;
+				long use_size = TO_KILO(mp->m_xsize);
+				char suffix   = SC_KBYTES_CHAR;
+				if (use_size > 3500) {
+					/* output like "4m" */
+					use_size = TO_MEGA(mp->m_xsize);
+					suffix = SC_MBYTES_CHAR;
+					sprintf(wcount, "%*lu ", n, use_size);
+				} else if (use_size > 999) {
+					/* output like "1.2m" */
+					suffix = SC_MBYTES_CHAR;
+					sprintf(wcount, "%*.1f ", n,
+						use_size/1000.0);
+				} else {
+					/* output like "12k" */
+					sprintf(wcount, "%*lu ", n, use_size);
+				}
+				wcl = 0;
+				while(wcount[wcl]) {
+					if (' ' == wcount[wcl]) {
+						wcount[wcl] = suffix;
+						break;
+					}
+					wcl ++;
+				}
+				subjlen -= fprintf(f, "%s", wcount);
 				break;
 			case 'o':
 				if (n == 0)
@@ -550,7 +604,7 @@ hprf(const char *fmt, int mesg, FILE *f, int threaded, const char *attrlist)
 				B = 1;
 				/*FALLTHRU*/
 			case 's':
-				n = n>0 ? n : subjlen - 2;
+				n = n>0 ? n : subjlen - 1;
 				if (B)
 					n -= 2;
 				if (subjline != NULL && n >= 0) {
@@ -585,6 +639,33 @@ hprf(const char *fmt, int mesg, FILE *f, int threaded, const char *attrlist)
 				if (n == 0)
 					n = 6;
 				subjlen -= fprintf(f, "%*g", n, mp->m_score);
+				break;
+
+/* %D etbmail regular date      (17 columns: eg "Tu 05/01/18 18:08") */
+			case 'D': /* use l_tdate */
+				if (n == 0)
+					n = 17;
+				if(0 == hl.l_tdate[0]) 
+					goto date_fallback;
+				subjlen -= fprintf(f, "%*.*s", n, n, hl.l_tdate);
+				break;
+/* %M etbmail medium-terse date (14 columns: eg    "05/01/18 18:08") */
+			case 'M': /* use l_tdate + 3 */
+				if (n == 0)
+					n = 14;
+				if(0 == hl.l_tdate[0]) 
+					goto date_fallback;
+				subjlen -= fprintf(f, "%*.*s", n, n, (char*)(hl.l_tdate + 3));
+				break;
+				break;
+/* %T etbmail terse date        (8 columns: eg     "05/01/18") */
+			case 'T': /* copy date from l_tdate */
+				if (n == 0)
+					n = 8;
+				if(0 == hl.l_tdate[0]) 
+					goto date_fallback;
+				hl.l_tdate[11] = 0;
+				subjlen -= fprintf(f, "%*.*s", n, n, (char*)(hl.l_tdate + 3));
 				break;
 			}
 		} else

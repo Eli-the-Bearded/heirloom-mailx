@@ -375,10 +375,14 @@ struct cmd {
  * line (hats off to Bill Joy!)
  */
 
+#define COMMON_DATE_LEN 25	/* used in head.c for date tweak() */
 struct headline {
 	char	*l_from;	/* The name of the sender */
 	char	*l_tty;		/* His tty string (if any) */
 	char	*l_date;	/* The entire date string */
+	char	l_tdate[COMMON_DATE_LEN]; /* Tweaked date string,
+				 *  will be empty or fixed length
+				 */
 };
 
 enum gfield {
@@ -647,3 +651,10 @@ enum ssl_vrfy_level {
 	VRFY_STRICT
 };
 #endif	/* USE_SSL */
+
+#define TO_CENT(x) (((x) + 99) / 100)
+#define TO_KILO(x) (((x) + 1023) / 1024)
+#define TO_MEGA(x) (((x) + 1048575) / 1048576)
+#define SC_CLINES_CHAR    'c' 
+#define SC_KBYTES_CHAR    'k'
+#define SC_MBYTES_CHAR    'm'
