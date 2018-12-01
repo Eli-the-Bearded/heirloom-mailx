@@ -135,6 +135,7 @@ ssl_rand_init(void)
 	char *cp;
 	int state = 0;
 
+#ifdef HAVE_RAND_EGD
 	if ((cp = value("ssl-rand-egd")) != NULL) {
 		cp = expand(cp);
 		if (RAND_egd(cp) == -1) {
@@ -143,7 +144,9 @@ ssl_rand_init(void)
 					cp);
 		} else
 			state = 1;
-	} else if ((cp = value("ssl-rand-file")) != NULL) {
+	} else
+#endif
+	       if ((cp = value("ssl-rand-file")) != NULL) {
 		cp = expand(cp);
 		if (RAND_load_file(cp, 1024) == -1) {
 			fprintf(stderr, catgets(catd, CATSET, 246,
@@ -216,6 +219,7 @@ ssl_select_method(const char *uhp)
 
 	cp = ssl_method_string(uhp);
 	if (cp != NULL) {
+#if 0
 #ifndef OPENSSL_NO_SSL2
 		if (equal(cp, "ssl2"))
 			method = SSLv2_client_method();
@@ -229,8 +233,10 @@ ssl_select_method(const char *uhp)
 					"Invalid SSL method \"%s\"\n"), cp);
 			method = SSLv23_client_method();
 		}
-	} else
+	} else {
+#endif
 		method = SSLv23_client_method();
+	}
 	return method;
 }
 
