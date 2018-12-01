@@ -44,10 +44,6 @@ static char sccsid[] = "@(#)fio.c	2.73 (gritter) 1/7/08";
 
 #include "rcv.h"
 
-#ifndef HAVE_WORDEXP
-#error wordexp support is required
-#endif
-
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/wait.h>
@@ -483,6 +479,10 @@ next:
 static char *
 globname(char *name)
 {
+#ifndef HAVE_WORDEXP
+	fprintf(stderr, "cannot expand \"%s\": globbing unsupported.\n", name);
+	return NULL;
+#else
 	wordexp_t we;
 	char *cp;
 	sigset_t nset;
@@ -528,6 +528,7 @@ globname(char *name)
 	}
 	wordfree(&we);
 	return cp;
+#endif
 }
 
 /*
