@@ -47,7 +47,9 @@ static char sccsid[] = "@(#)fio.c	2.73 (gritter) 1/7/08";
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <sys/wait.h>
+#ifdef HAVE_WORDEXP
 #include <wordexp.h>
+#endif
 #include <unistd.h>
 
 #if defined (USE_NSS)
