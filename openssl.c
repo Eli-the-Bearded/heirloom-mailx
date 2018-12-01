@@ -218,8 +218,8 @@ ssl_select_method(const char *uhp)
 	char	*cp;
 
 	cp = ssl_method_string(uhp);
+#ifdef OPENSSL_DEPRECATED_METHODS
 	if (cp != NULL) {
-#if 0
 #ifndef OPENSSL_NO_SSL2
 		if (equal(cp, "ssl2"))
 			method = SSLv2_client_method();
@@ -233,10 +233,10 @@ ssl_select_method(const char *uhp)
 					"Invalid SSL method \"%s\"\n"), cp);
 			method = SSLv23_client_method();
 		}
-	} else {
-#endif
+	} else
+#endif	/* OPENSSL_DEPRECATED_METHODS */
+/* SSLv23_client_method() Negotiate highest available SSL/TLS version */
 		method = SSLv23_client_method();
-	}
 	return method;
 }
 
